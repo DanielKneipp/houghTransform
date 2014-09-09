@@ -5,12 +5,25 @@
 
 #include "houghtransform.h"
 
-HoughTransform::HoughTransform( const cv::Size& imgSize ) :
-    houghSpace( cv::Mat( (int) round( sqrt( pow( (double) imgSize.width, 2 ) +
-                                            pow( (double) imgSize.height, 2 ) ) ),
-                         _THETA, CV_16U, cv::Scalar::all( 0 ) ) ),
-    thetaMax( 0.0 )
+HoughTransform::HoughTransform( const cv::Size& imgSize ) : bestThetaPos( 0 ), bestRPos( 0 ),
+                                                            maxHSValue( 0 )
 {
+    this->houghSpaceSize[ 0 ] = (int) round( sqrt( pow( (double) imgSize.width, 2 ) +
+                                                   pow( (double) imgSize.height, 2 ) ) );
+    houghSpaceSize[ 1 ] = (int) _THETA ;
+
+    this->houghSpace = new uint*[ houghSpaceSize[ 0 ] ];
+    for( uint i = 0; i < houghSpaceSize[ 0 ]; i++ )
+        this->houghSpace[ i ] = new uint[ (int) _THETA  ];
+
+    this->clearHoughSpace();
+}
+
+HoughTransform::~HoughTransform()
+{
+    for( uint i = 0; i < this->houghSpaceSize[ 1 ]; i++ )
+        delete[] this->houghSpace[ i ];
+    delete[] this->houghSpace;
 }
 
 void HoughTransform::compute( cv::Mat& edgeImage )
@@ -18,44 +31,48 @@ void HoughTransform::compute( cv::Mat& edgeImage )
     uchar pixel;
     int dist;
 
+    this->clearHoughSpace();
+
     for( int i = 0; i < edgeImage.rows; i++ )
     {
         for( int j = 0; j < edgeImage.cols; j++ )
         {
             pixel = edgeImage.at< uchar >( i, j );
             std::cout << "pixel value: " << (int) pixel << std::endl;
-            if( pixel == 255 )
+            if( pixel > 250 )
             {
                 for( float angle = 0.f; angle < _THETA; angle++ ) // Porque somente ate 180?
                 {
                     dist = round( ( (double) j * cos( angle * _CONVERSION_RAD ) ) +
                                   ( (double) i * sin( angle * _CONVERSION_RAD ) ) );
-                    this->houghSpace.at< ushort >( dist, angle )++;
-                    std::cout << "space value: " << this->houghSpace.at< uchar >( dist, angle ) << std::endl << std::endl;
+                    this->houghSpace[ dist ][ (int) angle ]++;
+                    std::cout << "space value: " << this->houghSpace[ dist ][ (int) angle ] << std::endl << std::endl;
                 }
             }
         }
     }
-
+    this->bestRTFinded = false;
+    this->findBestParamsRT( 30 );
     this->printHoughSpaceValues();
 }
 
-std::vector< int > HoughTransform::getBestParamsRT( const ushort treshold )
+int HoughTransform::findBestParamsRT( const uint treshold )
 {
-    std::vector< int > bestParams;
+    bestParams.clear();
 
-    ushort pointMax = this->houghSpace.at< ushort >( 0, 0 );
+    this->maxHSValue = this->houghSpace[ 0 ][ 0 ];
 
-    for( int i = 0; i < this->houghSpace.rows; i++ )
+    for( uint i = 0; i < this->houghSpaceSize[ 0 ]; i++ )
     {
-        for( int j = 0; j < this->houghSpace.cols; j++ )
+        for( uint j = 0; j < this->houghSpaceSize[ 1 ]; j++ )
         {
-            if( this->houghSpace.at< ushort >( i, j ) > pointMax)
+            if( this->houghSpace[ i ][ j ] > this->maxHSValue)
             {
-                pointMax = this->houghSpace.at< ushort >( i, j );
-                this->thetaMax = j;
+                this->maxHSValue = this->houghSpace[ i ][ j ];
+                this->bestThetaPos = j;
+                this->bestRPos = i;
             }
-            if( this->houghSpace.at< ushort >( i, j ) >= treshold )
+            if( this->houghSpace[ i ][ j ] >= treshold )
             {
                 bestParams.push_back( i );
                 bestParams.push_back( j );
@@ -64,17 +81,40 @@ std::vector< int > HoughTransform::getBestParamsRT( const ushort treshold )
     }
     this->bestRTFinded = true;
 
-    return bestParams;
+    return (int) ( this->bestParams.size() / 2 );
+}
+
+void HoughTransform::clearHoughSpace()
+{
+    for( uint i = 0; i < houghSpaceSize[0]; i++ )
+        for( uint j = 0; j < houghSpaceSize[1]; j++ )
+            this->houghSpace[ i ][ j ] = 0;
 }
 
 cv::Mat HoughTransform::getHoughSpaceImage()
 {
-    cv::Mat HSimg;
-    this->houghSpace.convertTo( HSimg, CV_8U );
+    cv::Mat HSimg( this->houghSpaceSize[ 0 ], this->houghSpaceSize[ 1 ], CV_8U );
+
+    float ratio = 255.f / (float) this->maxHSValue;
+
+    for( int i = 0; i < HSimg.rows; i++ )
+        for( int j = 0; j < HSimg.cols; j++ )
+            HSimg.at< uchar >( i, j ) = (float) this->houghSpace[ i ][ j ] * ratio;
+
     return HSimg;
 }
 
 void HoughTransform::printHoughSpaceValues()
 {
-    std::cout << " = "<< std::endl << " "  << this->houghSpace << std::endl << std::endl;
+    std::cout << std::endl << std::endl << " ------ Hough Space: ------ " << std::endl;
+
+    for( uint i = 0; i < houghSpaceSize[ 0 ]; i++ )
+    {
+        std::cout << "|";
+        for( uint j = 0; j < houghSpaceSize[ 1 ]; j++ )
+            std::cout << " " << this->houghSpace[i][j] << " ";
+
+        std::cout << "|" << std::endl;
+    }
+    std::cout << std::endl << std::endl << " ------ Hough Space: ------ " << std::endl;
 }

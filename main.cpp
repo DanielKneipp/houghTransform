@@ -5,7 +5,7 @@
 
 #define _COLS 100
 #define _ROWS 100
-#define _SIZE 10
+#define _SIZE 15
 
 #define _MAIN_WINDOW_TITLE "Image Test"
 

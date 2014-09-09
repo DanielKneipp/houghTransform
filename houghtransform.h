@@ -17,7 +17,8 @@
 class HoughTransform
 {
 public:
-    HoughTransform(const cv::Size &imgSize );
+    HoughTransform( const cv::Size &imgSize );
+    virtual ~HoughTransform();
 
     /**
      * @brief   Calcula o parametro r (distancia da origem) da equacao da reta
@@ -31,17 +32,6 @@ public:
     void compute( cv::Mat& edgeImage );
 
     /**
-     * @brief   Usado para se obter os melhores pontos (r,theta) que caracterizam
-     *          as retas da imagem.
-     *
-     * @param treshold  Define o valor minimo do acumulador no ponto (r,theta) para se
-     *                  Aceitar essas coordenadas como uma "boa" reta.
-     *
-     * @return  Vector contento os pares ordenados de (r,theta) aceitos.
-     */
-    std::vector< int > getBestParamsRT( const ushort treshold );
-
-    /**
      * @brief   Usado para se obter o espaco de Hough (Acumulador).
      *
      * @return  Imagem em escala de cinza representado o espaco de Hough
@@ -49,24 +39,66 @@ public:
      */
     cv::Mat getHoughSpaceImage();
 
+    /**
+     * @brief   Imprime os valores do Espaço de Hough na saída padrão.
+     */
     void printHoughSpaceValues();
 
 private:
     /**
-     * @brief Imagem em CV_16U que representa o espaco de Hough (acumulador).
+     * @brief   Usado para se obter os melhores pontos (r,theta) que caracterizam
+     *          as retas da imagem.
+     *
+     * @param treshold  Define o valor minimo do acumulador no ponto (r,theta) para se
+     *                  Aceitar essas coordenadas como uma "boa" reta.
+     *
+     * @return  Numero de pares ordenados de (r,theta) aceitos.
      */
-    cv::Mat houghSpace;
+    int findBestParamsRT( const uint treshold );
+
+    /**
+     * @brief Preenche o Espaco de Hough com zeros.
+     */
+    void clearHoughSpace();
 
     /**
      * @brief   Angulo de inclinacao assumido. Igual ao valor de theta do ponto
      *          do acumulador com maior valor ("melhor reta").
      */
-    float thetaMax;
+    int bestThetaPos;
 
     /**
-     * @brief Especifica se os melhores parametros (r,theta) ja foram encontrados.
+     * @brief   Valor de R da melhor reta encontrada.
+     */
+    int bestRPos;
+
+    /**
+     * @brief   Maior valor do acumulador
+     */
+    uint maxHSValue;
+
+    /**
+     * @brief   Especifica se os melhores parametros (r,theta) ja foram encontrados.
      */
     bool bestRTFinded;
+
+    /**
+     * @brief   Matriz que representa o espaco de Hough (acumulador),
+     *          onde [x][y] -> [r][theta].
+     */
+    uint **houghSpace;
+
+    /**
+     * @brief   Vetor de de 2 posições que representa o tamango da matriz houghSpace, onde
+     *          [linhas][colunas]
+     */
+    uint houghSpaceSize [2];
+
+    /**
+     * @brief   Vector contento os pares ordenados de (r,theta) que caracterizam
+     *          as retas da imagem.
+     */
+    std::vector< int > bestParams;
 };
 
 #endif // HOUGHTRANSFORM_H
