@@ -37,11 +37,12 @@ void HoughTransform::compute( cv::Mat& edgeImage )
     {
         for( int j = 0; j < edgeImage.cols; j++ )
         {
-            pixel = edgeImage.at< uchar >( i, j );
+            // Em uma imagem, o ponto final fica na linha mais abaixo, ao contrario de um plano cartesiano
+            pixel = edgeImage.at< uchar >( edgeImage.rows - i - 1, j );
             std::cout << "pixel value: " << (int) pixel << std::endl;
             if( pixel > 250 )
             {
-                for( float angle = 0.f; angle < _THETA; angle++ ) // Porque somente ate 180?
+                for( float angle = 0.f; angle < _THETA; angle++ )
                 {
                     dist = round( ( (double) j * cos( angle * _CONVERSION_RAD ) ) +
                                   ( (double) i * sin( angle * _CONVERSION_RAD ) ) );
@@ -99,7 +100,7 @@ cv::Mat HoughTransform::getHoughSpaceImage()
 
     for( int i = 0; i < HSimg.rows; i++ )
         for( int j = 0; j < HSimg.cols; j++ )
-            HSimg.at< uchar >( i, j ) = (float) this->houghSpace[ i ][ j ] * ratio;
+            HSimg.at< uchar >( i, j ) = (int) this->houghSpace[ i ][ j ] * ratio;
 
     return HSimg;
 }

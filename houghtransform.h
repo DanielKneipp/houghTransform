@@ -11,8 +11,9 @@
 
 #define _USE_MATH_DEFINES
 
-#define _THETA 180.0
-#define _CONVERSION_RAD 180.0/M_PI
+// Porque somente ate 90? Talvez seja por causa do quadrante que a imagem esta
+#define _THETA 90.0
+#define _CONVERSION_RAD M_PI/180.0
 
 class HoughTransform
 {
