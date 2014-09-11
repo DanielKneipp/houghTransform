@@ -12,7 +12,7 @@
 #define _USE_MATH_DEFINES
 
 // Porque somente ate 90? Talvez seja por causa do quadrante que a imagem esta
-#define _THETA 90.0
+#define _THETA_AXIS 360
 #define _CONVERSION_RAD M_PI/180.0
 
 class HoughTransform
@@ -44,6 +44,18 @@ public:
      * @brief   Imprime os valores do Espaço de Hough na saída padrão.
      */
     void printHoughSpaceValues();
+
+    /**
+     * @brief   Retorna os melhores pares (r,theta) encontrados, usando
+     *          um limiar passado como parametro para determina-los.
+     *
+     * @param treshold  Limiar usado para definir quais pares (r,theta) sao considerados
+     *                  bons. Caso o valor do acumulador na posicao [r][theta] > treshold,
+     *                  estes parametros sao aceitos.
+     *
+     * @return  Vector com os parametros encontrados.
+     */
+    std::vector< int > getBestParamsRT( const uint treshold );
 
 private:
     /**
@@ -84,6 +96,13 @@ private:
     bool bestRTFinded;
 
     /**
+     * @brief   Especifica qual o ultimo limiar utilizado para achar os melhores parametros
+     *          (r,theta). Caso ainda nao tenha achado esses parametros, o valor padrao
+     *          eh 0.
+     */
+    uint lastTresholdUsed;
+
+    /**
      * @brief   Matriz que representa o espaco de Hough (acumulador),
      *          onde [x][y] -> [r][theta].
      */
@@ -91,7 +110,7 @@ private:
 
     /**
      * @brief   Vetor de de 2 posições que representa o tamango da matriz houghSpace, onde
-     *          [linhas][colunas]
+     *          [linhas][colunas] -> [r][theta].
      */
     uint houghSpaceSize [2];
 
