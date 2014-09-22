@@ -3,8 +3,8 @@
 
 #include "houghtransform.h"
 
-#define _COLS 100
-#define _ROWS 100
+#define _COLS 50
+#define _ROWS 50
 #define _SIZE 50
 
 #define _MAIN_WINDOW_TITLE "Image Test"
@@ -14,7 +14,7 @@ using namespace std;
 void drawMainDiagonal( cv::Mat& img )
 {
     float ratio =  (float) _COLS / (float) _ROWS;
-    for( int i = round( (float) _ROWS / 10 ); i < img.rows - round( (float) _ROWS / 10 ); i++ )
+    for( int i = round( (float) _ROWS / 10.0 ); i < img.rows - round( (float) _ROWS / 10.0 ); i++ )
     {
         img.at< uchar >( i, round( (float) i * ratio ) ) = 255;
     }
@@ -22,7 +22,7 @@ void drawMainDiagonal( cv::Mat& img )
 
 void drawSquare( cv::Mat& img )
 {
-    int colMin = round( (float) _COLS / 10 ), rowMin = round( (float) _ROWS / 10 );
+    int colMin = round( (float) _COLS / 10.0 ), rowMin = round( (float) _ROWS / 10.0 );
 
     // Linhas de cima e de baixo
     for( int i = colMin ; i < img.cols - colMin; i++ )
@@ -39,20 +39,20 @@ void drawSquare( cv::Mat& img )
     }
 }
 
-// Errors no extremos inferior e direito.
+// Errors nos extremos inferior e direito.
 void drawCircle( cv::Mat& img )
 {
-    int colMin = round( (float) _COLS / 10 ), rowMin = round( (float) _ROWS / 10 );
-    float a = round( (float) _ROWS / 2 );
-    float b = round( (float) _COLS / 2 );
-    int r = round( ( (_COLS - colMin) - colMin) / 2 );
+    int colMin = round( (float) _COLS / 10.0 ), rowMin = round( (float) _ROWS / 10.0 );
+    int a = round( (float) _ROWS / 2.0 );
+    int b = round( (float) _COLS / 2.0 );
+    int r = round( (float) ( ( _COLS - colMin ) - colMin) / 2.0 );
 
     for( int i = rowMin ; i < img.rows - rowMin; i++ )
     {
         for( int j = colMin ; j < img.cols - colMin; j++ )
         {
-            if(  pow( i - (int) a, 2 )  + pow( j - (int) b, 2 ) >=  pow( r, 2 ) - 70 &&
-                 pow( i - (int) a, 2 )  + pow( j - (int) b, 2 ) <=  pow( r, 2 ) + 70 )
+            if(  pow( i - a, 2 )  + pow( j - b, 2 ) >=  pow( r, 2 ) - 70 &&
+                 pow( i - a, 2 )  + pow( j - b, 2 ) <=  pow( r, 2 ) + 70 )
             {
                 img.at< uchar >( i, j ) = 255;
             }
@@ -66,10 +66,10 @@ int main()
     cv::Mat imgTest( _ROWS, _COLS, CV_8U, cv::Scalar::all( 0 ) );
     HoughTransform HT( imgTest.size() );
 
-    //drawMainDiagonal( imgTest );
+    drawMainDiagonal( imgTest );
     drawSquare( imgTest );
     //drawCircle( imgTest );
-    cv::circle(imgTest, cv::Point(50,50), 40, cv::Scalar::all(255), 1, 1);
+    //cv::circle(imgTest, cv::Point( 50,50 ), 40, cv::Scalar::all( 255 ), 1, 1);
 
     HT.compute( imgTest );
     HT.getBestParamsRT( 38 );

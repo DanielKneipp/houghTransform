@@ -6,7 +6,7 @@
 #include "houghtransform.h"
 
 HoughTransform::HoughTransform( const cv::Size& imgSize ) : bestThetaPos( 0 ), bestRPos( 0 ),
-                                                            maxHSValue( 0 ), lastTresholdUsed(0)
+                                                            maxHSValue( 0 ), lastTresholdUsed( 0 )
 {
     this->houghSpaceSize[ 0 ] = (int) round( sqrt( pow( (double) imgSize.width, 2 ) +
                                                    pow( (double) imgSize.height, 2 ) ) );
@@ -40,11 +40,11 @@ void HoughTransform::compute( cv::Mat& edgeImage )
             // Em uma imagem, o ponto final fica na linha mais abaixo, ao contrario de um plano cartesiano
             pixel = edgeImage.at< uchar >( edgeImage.rows - i - 1, j );
 
-            std::cout << "pixel value: " << (int) pixel << std::endl;
+            //std::cout << "pixel value: " << (int) pixel << std::endl;
             if( pixel > 250 )
             {
-                std::cout << "-----------------------" << std::endl << std::endl;
-                for( float angle = 0.f; angle < _THETA_AXIS/2; angle++ )
+                //std::cout << "-----------------------" << std::endl << std::endl;
+                for( float angle = 0.f; angle < _THETA_AXIS / 2; angle++ )
                 {
                     double rad_angle = angle * _CONVERSION_RAD;
                     dist = round( ( (double) j * cos( rad_angle ) ) +
@@ -61,9 +61,9 @@ void HoughTransform::compute( cv::Mat& edgeImage )
                         this->houghSpace[ dist ][ (int) angle ]++;
                     }
 
-                    std::cout << "space value: " << this->houghSpace[ dist ][ (int) angle ] << std::endl;
+                    //std::cout << "space value: " << this->houghSpace[ dist ][ (int) angle ] << std::endl;
                 }
-                std::cout << "-----------------------" << std::endl << std::endl;
+                //std::cout << "-----------------------" << std::endl << std::endl;
             }
         }
     }

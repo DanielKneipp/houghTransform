@@ -11,7 +11,6 @@
 
 #define _USE_MATH_DEFINES
 
-// Porque somente ate 90? Talvez seja por causa do quadrante que a imagem esta
 #define _THETA_AXIS 360
 #define _CONVERSION_RAD M_PI/180.0
 
@@ -70,7 +69,7 @@ private:
     int findBestParamsRT( const uint treshold );
 
     /**
-     * @brief Preenche o Espaco de Hough com zeros.
+     * @brief   Preenche o Espaco de Hough com zeros.
      */
     void clearHoughSpace();
 
