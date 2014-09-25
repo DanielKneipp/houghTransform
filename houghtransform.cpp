@@ -5,6 +5,81 @@
 
 #include "houghtransform.h"
 
+inline uchar calcPixekGrad( cv::Mat src, const short kernel[ 3 ][ 3 ], int row, int col)
+{
+    return ( ( src.at< uchar >( row-1, col-1 ) * kernel[ 0 ][ 0 ] )
+           + ( src.at< uchar >( row-1, col ) * kernel[ 0 ][ 1 ] )
+           + ( src.at< uchar >( row-1, col+1 ) * kernel[ 0 ][ 2 ] )
+
+           + ( src.at< uchar >( row, col-1 ) * kernel[ 1 ][ 0 ] )
+           + ( src.at< uchar >( row, col ) * kernel[ 1 ][ 1 ] )
+           + ( src.at< uchar >( row, col+1 ) * kernel[ 1 ][ 2 ] )
+
+           + ( src.at< uchar >( row+1, col-1 ) * kernel[ 2 ][ 0 ] )
+           + ( src.at< uchar >( row+1, col ) * kernel[ 2 ][ 1 ] )
+           + ( src.at< uchar >( row+1, col+1 ) * kernel[ 2 ][ 2 ] ) );
+}
+
+inline uchar calcPixekGrad_Left( cv::Mat src, const short kernel[ 3 ][ 3 ], int row, int col)
+{
+    return ( ( 0 )
+           + ( src.at< uchar >( row-1, col ) * kernel[ 0 ][ 1 ] )
+           + ( src.at< uchar >( row-1, col+1 ) * kernel[ 0 ][ 2 ] )
+
+           + ( 0 )
+           + ( src.at< uchar >( row, col ) * kernel[ 1 ][ 1 ] )
+           + ( src.at< uchar >( row, col+1 ) * kernel[ 1 ][ 2 ] )
+
+           + ( 0 )
+           + ( src.at< uchar >( row+1, col ) * kernel[ 2 ][ 1 ] )
+           + ( src.at< uchar >( row+1, col+1 ) * kernel[ 2 ][ 2 ] ) );
+}
+
+inline uchar calcPixekGrad_Right( cv::Mat src, const short kernel[ 3 ][ 3 ], int row, int col)
+{
+    return ( ( src.at< uchar >( row-1, col-1 ) * kernel[ 0 ][ 0 ] )
+           + ( src.at< uchar >( row-1, col ) * kernel[ 0 ][ 1 ] )
+           + ( 0 )
+
+           + ( src.at< uchar >( row, col-1 ) * kernel[ 1 ][ 0 ] )
+           + ( src.at< uchar >( row, col ) * kernel[ 1 ][ 1 ] )
+           + ( 0 )
+
+           + ( src.at< uchar >( row+1, col-1 ) * kernel[ 2 ][ 0 ] )
+           + ( src.at< uchar >( row+1, col ) * kernel[ 2 ][ 1 ] )
+           + ( 0 ) );
+}
+
+inline uchar calcPixekGrad_Top( cv::Mat src, const short kernel[ 3 ][ 3 ], int row, int col)
+{
+    return ( ( 0 )
+           + ( 0 )
+           + ( 0 )
+
+           + ( src.at< uchar >( row, col-1 ) * kernel[ 1 ][ 0 ] )
+           + ( src.at< uchar >( row, col ) * kernel[ 1 ][ 1 ] )
+           + ( src.at< uchar >( row, col+1 ) * kernel[ 1 ][ 2 ] )
+
+           + ( src.at< uchar >( row+1, col-1 ) * kernel[ 2 ][ 0 ] )
+           + ( src.at< uchar >( row+1, col ) * kernel[ 2 ][ 1 ] )
+           + ( src.at< uchar >( row+1, col+1 ) * kernel[ 2 ][ 2 ] ) );
+}
+
+inline uchar calcPixekGrad_Bottom( cv::Mat src, const short kernel[ 3 ][ 3 ], int row, int col)
+{
+    return ( ( src.at< uchar >( row-1, col-1 ) * kernel[ 0 ][ 0 ] )
+           + ( src.at< uchar >( row-1, col ) * kernel[ 0 ][ 1 ] )
+           + ( src.at< uchar >( row-1, col+1 ) * kernel[ 0 ][ 2 ] )
+
+           + ( src.at< uchar >( row, col-1 ) * kernel[ 1 ][ 0 ] )
+           + ( src.at< uchar >( row, col ) * kernel[ 1 ][ 1 ] )
+           + ( src.at< uchar >( row, col+1 ) * kernel[ 1 ][ 2 ] )
+
+           + ( 0 )
+           + ( 0 )
+           + ( 0 ) );
+}
+
 HoughTransform::HoughTransform( const cv::Size& imgSize ) : bestThetaPos( 0 ), bestRPos( 0 ),
                                                             maxHSValue( 0 ), lastTresholdUsed( 0 )
 {
@@ -32,6 +107,7 @@ void HoughTransform::compute( cv::Mat& edgeImage )
     int dist;
 
     this->clearHoughSpace();
+    this->gradientCalc( edgeImage );
 
     for( int i = 0; i < edgeImage.rows; i++ )
     {
@@ -147,3 +223,60 @@ std::vector< int > HoughTransform::getBestParamsRT( const uint treshold )
         return this->bestParams;
     }
 }
+
+cv::Mat HoughTransform::getGradientImageX()
+{
+    return this->imgGradientX;
+}
+
+cv::Mat HoughTransform::getGradientImageY()
+{
+    return this->imgGradientY;
+}
+
+void HoughTransform::gradientCalc( const cv::Mat src )
+{
+    this->imgGradientX = cv::Mat( src.rows, src.cols, CV_8U );
+    this->imgGradientY = cv::Mat( src.rows, src.cols, CV_8U );
+
+    const short kernelX [ 3 ][ 3 ] = { -1, 0, 1,
+                                       -1, 0, 1,
+                                       -1, 0, 1 };
+    const short kernelY [ 3 ][ 3 ] = { -1, -1, -1,
+                                        0, 0, 0,
+                                        1, 1, 1 };
+
+    // Passada interna a imagem
+    for( int i = 1; i < src.rows - 1; i++ )
+    {
+        for( int j = 1; j < src.rows - 1; j++ )
+        {
+            this->imgGradientX.at< uchar >( i, j ) = calcPixekGrad( src, kernelX, i, j );
+            this->imgGradientY.at< uchar >( i, j ) = calcPixekGrad( src, kernelY, i, j );
+        }
+    }
+
+    // Passada nas bordas da imagem
+    // 1 - Extremos esquerdo e direito
+    for( int i = 1; i < src.rows - 1; i++ )
+    {
+        this->imgGradientX.at< uchar >( i, 0 ) = calcPixekGrad_Left( src, kernelX, i, 0 );
+        this->imgGradientY.at< uchar >( i, 0 ) = calcPixekGrad_Left( src, kernelY, i, 0 );
+
+        this->imgGradientX.at< uchar >( i, src.cols - 1 ) = calcPixekGrad_Right( src, kernelX, i, src.cols - 1 );
+        this->imgGradientY.at< uchar >( i, src.cols - 1 ) = calcPixekGrad_Right( src, kernelY, i, src.cols - 1 );
+    }
+
+    // 2 - Extremo superior e inferior
+    for( int j = 1; j < src.cols - 1; j++ )
+    {
+        this->imgGradientX.at< uchar >( 0, j ) = calcPixekGrad_Top( src, kernelX, 0, j );
+        this->imgGradientY.at< uchar >( 0, j ) = calcPixekGrad_Top( src, kernelY, 0, j );
+
+        this->imgGradientX.at< uchar >( src.rows - 1, j ) = calcPixekGrad_Bottom( src, kernelX, src.rows - 1, j );
+        this->imgGradientY.at< uchar >( src.rows - 1, j ) = calcPixekGrad_Bottom( src, kernelY, src.rows - 1, j );
+    }
+
+    // 3 - Quinas
+}
+

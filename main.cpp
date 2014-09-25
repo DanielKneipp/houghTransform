@@ -3,8 +3,8 @@
 
 #include "houghtransform.h"
 
-#define _COLS 50
-#define _ROWS 50
+#define _COLS 100
+#define _ROWS 100
 #define _SIZE 50
 
 #define _MAIN_WINDOW_TITLE "Image Test"
@@ -69,15 +69,19 @@ int main()
     drawMainDiagonal( imgTest );
     drawSquare( imgTest );
     //drawCircle( imgTest );
-    //cv::circle(imgTest, cv::Point( 50,50 ), 40, cv::Scalar::all( 255 ), 1, 1);
+    cv::circle( imgTest, cv::Point( 50,50 ), 25, cv::Scalar::all( 255 ), 1, 1 );
 
     HT.compute( imgTest );
     HT.getBestParamsRT( 38 );
     cv::Mat HSimg = HT.getHoughSpaceImage();
+    cv::Mat Gx = HT.getGradientImageX();
+    cv::Mat Gy = HT.getGradientImageY();
 
     cv::namedWindow( _MAIN_WINDOW_TITLE );
     cv::imshow( _MAIN_WINDOW_TITLE, imgTest );
 
+    cv::imshow( "X Gradient ", Gx );
+    cv::imshow( "Y Gradient ", Gy );
     cv::imshow( "Hough Space", HSimg );
 
     cv::waitKey( 0 );

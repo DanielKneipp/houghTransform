@@ -56,6 +56,22 @@ public:
      */
     std::vector< int > getBestParamsRT( const uint treshold );
 
+    /**
+     * @brief   Usado para obter a imagem que representa o gradiente na direcao x,
+     *          da imagem ja processada por {@link #conpute(cv::Mat &) compute(imgSrc)}.
+     *
+     * @return  Imagem que representa o gradiente na direcao X.
+     */
+    cv::Mat getGradientImageX();
+
+    /**
+     * @brief   Usado para obter a imagem que representa o gradiente na direcao y,
+     *          da imagem ja processada por {@link #conpute(cv::Mat &) compute(imgSrc)}.
+     *
+     * @return  Imagem que representa o gradiente na direcao Y.
+     */
+    cv::Mat getGradientImageY();
+
 private:
     /**
      * @brief   Usado para se obter os melhores pontos (r,theta) que caracterizam
@@ -72,6 +88,15 @@ private:
      * @brief   Preenche o Espaco de Hough com zeros.
      */
     void clearHoughSpace();
+
+    /**
+     * @brief   Calcula o gradiente da imagem passada como parametro e armazena
+     *          nas variaveis imgGradientX (gradiente na direcao x) e imgGradientY
+     *          (gradiente na direcao y).
+     *
+     * @param src   Imagem a ser calculada o gradiente.
+     */
+    void gradientCalc( const cv::Mat src );
 
     /**
      * @brief   Angulo de inclinacao assumido. Igual ao valor de theta do ponto
@@ -118,6 +143,16 @@ private:
      *          as retas da imagem.
      */
     std::vector< int > bestParams;
+
+    /**
+     * @brief   Imagem que representa o gradiente na direcao x ja calculado de uma imagem.
+     */
+    cv::Mat imgGradientX;
+
+    /**
+     * @brief Imagem que representa o gradiente na direcao y ja calculado de uma imagem.
+     */
+    cv::Mat imgGradientY;
 };
 
 #endif // HOUGHTRANSFORM_H
