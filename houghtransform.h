@@ -13,6 +13,29 @@
 
 #define _THETA_AXIS 360
 #define _CONVERSION_RAD M_PI/180.0
+#define _CONVERSION_DEG 180.0/M_PI
+
+
+struct matrix
+{
+    /** Matriz contendo os valores inteiros. */
+    int **mat = NULL;
+
+    /** Numero de linhas da matriz. */
+    uint rows = 0;
+
+    /** Numero de linhas da matriz. */
+    uint cols = 0;
+
+    /** Especifica se a matriz ja foi inicializada  */
+    bool initialized = false;
+
+    /** Vetor que guarda o valor maximo e a posicao que contem este valor
+     *  na {@link #**mat matriz}. Se armazena na ordem [valor, x, y] */
+    int maxValuesPos[ 3 ] = { -1, -1, -1 };
+};
+
+typedef struct matrix matrix;
 
 class HoughTransform
 {
@@ -99,6 +122,23 @@ private:
     void gradientCalc( const cv::Mat src );
 
     /**
+     * @brief   Inicializa as matrizes que armazenam os resultados das derivadas
+     *          em x e y.
+     *
+     * @param rows  Numero de linhas das matrizes.
+     *
+     * @param cols  Numero de colunas das matrizes
+     */
+    void initGrads( uint rows, uint cols );
+
+    /**
+     * @brief   Acha a posicao que contem o maior valor da matriz.
+     *
+     * @param Matrix    Onde sera procurado o maior valor.
+     */
+    void static findBestValuePos(matrix& Matrix );
+
+    /**
      * @brief   Angulo de inclinacao assumido. Igual ao valor de theta do ponto
      *          do acumulador com maior valor ("melhor reta").
      */
@@ -139,6 +179,16 @@ private:
     uint houghSpaceSize [2];
 
     /**
+     * @brief   Matriz que contem o resultaod da derivada parcial na direcao X.
+     */
+    matrix gradientX;
+
+    /**
+     * @brief   Matriz que contem o resultaod da derivada parcial na direcao Y.
+     */
+    matrix gradientY;
+
+    /**
      * @brief   Vector contento os pares ordenados de (r,theta) que caracterizam
      *          as retas da imagem.
      */
@@ -150,7 +200,7 @@ private:
     cv::Mat imgGradientX;
 
     /**
-     * @brief Imagem que representa o gradiente na direcao y ja calculado de uma imagem.
+     * @brief   Imagem que representa o gradiente na direcao y ja calculado de uma imagem.
      */
     cv::Mat imgGradientY;
 };

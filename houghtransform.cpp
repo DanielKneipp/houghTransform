@@ -5,7 +5,7 @@
 
 #include "houghtransform.h"
 
-inline uchar calcPixekGrad( cv::Mat src, const short kernel[ 3 ][ 3 ], int row, int col)
+inline int calcPixelGrad( cv::Mat src, const short kernel[ 3 ][ 3 ], int row, int col)
 {
     return ( ( src.at< uchar >( row-1, col-1 ) * kernel[ 0 ][ 0 ] )
            + ( src.at< uchar >( row-1, col ) * kernel[ 0 ][ 1 ] )
@@ -20,7 +20,7 @@ inline uchar calcPixekGrad( cv::Mat src, const short kernel[ 3 ][ 3 ], int row, 
            + ( src.at< uchar >( row+1, col+1 ) * kernel[ 2 ][ 2 ] ) );
 }
 
-inline uchar calcPixekGrad_Left( cv::Mat src, const short kernel[ 3 ][ 3 ], int row, int col)
+inline int calcPixelGrad_Left( cv::Mat src, const short kernel[ 3 ][ 3 ], int row, int col)
 {
     return ( ( 0 )
            + ( src.at< uchar >( row-1, col ) * kernel[ 0 ][ 1 ] )
@@ -35,7 +35,7 @@ inline uchar calcPixekGrad_Left( cv::Mat src, const short kernel[ 3 ][ 3 ], int 
            + ( src.at< uchar >( row+1, col+1 ) * kernel[ 2 ][ 2 ] ) );
 }
 
-inline uchar calcPixekGrad_Right( cv::Mat src, const short kernel[ 3 ][ 3 ], int row, int col)
+inline int calcPixelGrad_Right( cv::Mat src, const short kernel[ 3 ][ 3 ], int row, int col)
 {
     return ( ( src.at< uchar >( row-1, col-1 ) * kernel[ 0 ][ 0 ] )
            + ( src.at< uchar >( row-1, col ) * kernel[ 0 ][ 1 ] )
@@ -50,7 +50,7 @@ inline uchar calcPixekGrad_Right( cv::Mat src, const short kernel[ 3 ][ 3 ], int
            + ( 0 ) );
 }
 
-inline uchar calcPixekGrad_Top( cv::Mat src, const short kernel[ 3 ][ 3 ], int row, int col)
+inline int calcPixelGrad_Top( cv::Mat src, const short kernel[ 3 ][ 3 ], int row, int col)
 {
     return ( ( 0 )
            + ( 0 )
@@ -65,7 +65,7 @@ inline uchar calcPixekGrad_Top( cv::Mat src, const short kernel[ 3 ][ 3 ], int r
            + ( src.at< uchar >( row+1, col+1 ) * kernel[ 2 ][ 2 ] ) );
 }
 
-inline uchar calcPixekGrad_Bottom( cv::Mat src, const short kernel[ 3 ][ 3 ], int row, int col)
+inline int calcPixelGrad_Bottom( cv::Mat src, const short kernel[ 3 ][ 3 ], int row, int col)
 {
     return ( ( src.at< uchar >( row-1, col-1 ) * kernel[ 0 ][ 0 ] )
            + ( src.at< uchar >( row-1, col ) * kernel[ 0 ][ 1 ] )
@@ -99,46 +99,114 @@ HoughTransform::~HoughTransform()
     for( uint i = 0; i < this->houghSpaceSize[ 0 ]; i++ )
         delete[] this->houghSpace[ i ];
     delete[] this->houghSpace;
+
+    if( this->gradientX.initialized )
+    {
+        for( uint i = 0; i < this->gradientX.rows; i++ )
+            delete[] this->gradientX.mat[ i ];
+        delete[] this->gradientX.mat;
+    }
+
+    if( this->gradientY.initialized )
+    {
+        for( uint i = 0; i < this->gradientY.rows; i++ )
+            delete[] this->gradientY.mat[ i ];
+        delete[] this->gradientY.mat;
+    }
+}
+
+void HoughTransform::initGrads( uint rows, uint cols )
+{
+    // Desalocacao de memoria, caso necessario
+    if( this->gradientX.initialized )
+    {
+        for( uint i = 0; i < this->gradientX.rows; i++)
+            delete[] this->gradientX.mat[ i ];
+        delete[] this->gradientX.mat;
+    }
+    if( this->gradientY.initialized )
+    {
+        for( uint i = 0; i < this->gradientY.rows; i++)
+            delete[] this->gradientY.mat[ i ];
+        delete[] this->gradientY.mat;
+    }
+
+    // Inicializacao ocm novos valores.
+    this->gradientX.mat = new int*[ rows ];
+    for( uint i = 0; i < rows; i++)
+        this->gradientX.mat[ i ] = new int[ cols ];
+    this->gradientX.rows = rows;
+    this->gradientX.cols = cols;
+    this->gradientX.initialized = true;
+    for( ushort i = 0; i < 2; i++ )
+        this->gradientX.maxValuesPos[ i ] = -1;
+
+    this->gradientY.mat = new int*[ rows ];
+    for( uint i = 0; i < rows; i++)
+        this->gradientY.mat[ i ] = new int[ cols ];
+    this->gradientY.rows = rows;
+    this->gradientY.cols = cols;
+    this->gradientY.initialized = true;
+    for( ushort i = 0; i < 2; i++ )
+        this->gradientY.maxValuesPos[ i ] = -1;
 }
 
 void HoughTransform::compute( cv::Mat& edgeImage )
 {
     uchar pixel;
+    int valueGx, valueGy;
     int dist;
+    double angle, rad_angle;
+    double phi, deg_phi;
 
     this->clearHoughSpace();
+    this->initGrads( edgeImage.rows, edgeImage.cols );
+
     this->gradientCalc( edgeImage );
 
     for( int i = 0; i < edgeImage.rows; i++ )
     {
         for( int j = 0; j < edgeImage.cols; j++ )
         {
-            // Em uma imagem, o ponto final fica na linha mais abaixo, ao contrario de um plano cartesiano
+            // Em uma imagem, o ponto final fica na linha mais abaixo,
+            // ao contrario de um plano cartesiano.
             pixel = edgeImage.at< uchar >( edgeImage.rows - i - 1, j );
+            valueGx = this->gradientX.mat[ this->gradientX.rows - i - 1 ][ j ];
+            valueGy = this->gradientY.mat[ this->gradientY.rows - i - 1 ][ j ];
 
             //std::cout << "pixel value: " << (int) pixel << std::endl;
-            if( pixel > 250 )
+            if( pixel > 20 )
             {
                 //std::cout << "-----------------------" << std::endl << std::endl;
-                for( float angle = 0.f; angle < _THETA_AXIS / 2; angle++ )
+
+                phi = atan2( valueGy, valueGx );
+                deg_phi = phi * _CONVERSION_DEG;
+                if( deg_phi < 0 )
+                    deg_phi = deg_phi + 180;
+
+                angle = deg_phi;
+                //angle = deg_phi + 90; // angle (theta) nao eh com relacao a reta em si!
+                                        // Mas sim com relacao a semi-reta e o eixo x,
+                                        // semi-reta que traca a menor distancia entre a reta de interesse
+                                        // e a origem.
+
+                rad_angle = angle * _CONVERSION_RAD;
+                dist = round( ( (double) j * cos( rad_angle ) ) +
+                              ( (double) i * sin( rad_angle ) ) );
+
+                // ( (-1)^k * r, theta + pi*k )
+                if( dist < 0 )
                 {
-                    double rad_angle = angle * _CONVERSION_RAD;
-                    dist = round( ( (double) j * cos( rad_angle ) ) +
-                                  ( (double) i * sin( rad_angle ) ) );
-
-                    // ( (-1)^k * r, theta + pi*k )
-                    if( dist < 0 )
-                    {
-                        dist = abs( dist );
-                        this->houghSpace[ dist ][ (int) angle + 180 ]++;
-                    }
-                    else
-                    {
-                        this->houghSpace[ dist ][ (int) angle ]++;
-                    }
-
-                    //std::cout << "space value: " << this->houghSpace[ dist ][ (int) angle ] << std::endl;
+                    dist = abs( dist );
+                    this->houghSpace[ dist ][ (int) round( angle ) + 180 ]++;
                 }
+                else
+                {
+                    this->houghSpace[ dist ][ (int) round( angle ) ]++;
+                }
+
+                //std::cout << "space value: " << this->houghSpace[ dist ][ (int) angle ] << std::endl;
+
                 //std::cout << "-----------------------" << std::endl << std::endl;
             }
         }
@@ -226,19 +294,32 @@ std::vector< int > HoughTransform::getBestParamsRT( const uint treshold )
 
 cv::Mat HoughTransform::getGradientImageX()
 {
+    this->imgGradientX = cv::Mat( this->gradientX.rows, this->gradientX.cols, CV_8U );
+
+    float ratio = 255.f / (float) this->gradientX.maxValuesPos[ 0 ];
+
+    for( uint i = 0; i < this->gradientX.rows; i++ )
+        for( uint j = 0; j < this->gradientX.cols; j++ )
+            this->imgGradientX.at< uchar >( i, j ) = (int) round( this->gradientX.mat[ i ][ j ] * ratio );
+
     return this->imgGradientX;
 }
 
 cv::Mat HoughTransform::getGradientImageY()
 {
+    this->imgGradientY = cv::Mat( this->gradientY.rows, this->gradientY.cols, CV_8U );
+
+    float ratio = 255.f / (float) this->gradientY.maxValuesPos[ 0 ];
+
+    for( uint i = 0; i < this->gradientY.rows; i++ )
+        for( uint j = 0; j < this->gradientY.cols; j++ )
+            this->imgGradientY.at< uchar >( i, j ) = (int) round( this->gradientY.mat[ i ][ j ] * ratio );
+
     return this->imgGradientY;
 }
 
 void HoughTransform::gradientCalc( const cv::Mat src )
 {
-    this->imgGradientX = cv::Mat( src.rows, src.cols, CV_8U );
-    this->imgGradientY = cv::Mat( src.rows, src.cols, CV_8U );
-
     const short kernelX [ 3 ][ 3 ] = { -1, 0, 1,
                                        -1, 0, 1,
                                        -1, 0, 1 };
@@ -251,8 +332,8 @@ void HoughTransform::gradientCalc( const cv::Mat src )
     {
         for( int j = 1; j < src.rows - 1; j++ )
         {
-            this->imgGradientX.at< uchar >( i, j ) = calcPixekGrad( src, kernelX, i, j );
-            this->imgGradientY.at< uchar >( i, j ) = calcPixekGrad( src, kernelY, i, j );
+            this->gradientX.mat[ i ][ j ] = calcPixelGrad( src, kernelX, i, j );
+            this->gradientY.mat[ i ][ j ] = calcPixelGrad( src, kernelY, i, j );
         }
     }
 
@@ -260,23 +341,38 @@ void HoughTransform::gradientCalc( const cv::Mat src )
     // 1 - Extremos esquerdo e direito
     for( int i = 1; i < src.rows - 1; i++ )
     {
-        this->imgGradientX.at< uchar >( i, 0 ) = calcPixekGrad_Left( src, kernelX, i, 0 );
-        this->imgGradientY.at< uchar >( i, 0 ) = calcPixekGrad_Left( src, kernelY, i, 0 );
+        this->gradientX.mat[ i ][ 0 ] = calcPixelGrad_Left( src, kernelX, i, 0 );
+        this->gradientY.mat[ i ][ 0 ] = calcPixelGrad_Left( src, kernelY, i, 0 );
 
-        this->imgGradientX.at< uchar >( i, src.cols - 1 ) = calcPixekGrad_Right( src, kernelX, i, src.cols - 1 );
-        this->imgGradientY.at< uchar >( i, src.cols - 1 ) = calcPixekGrad_Right( src, kernelY, i, src.cols - 1 );
+        this->gradientX.mat[ i ][ src.cols - 1 ] = calcPixelGrad_Right( src, kernelX, i, src.cols - 1 );
+        this->gradientY.mat[ i ][ src.cols - 1 ] = calcPixelGrad_Right( src, kernelY, i, src.cols - 1 );
     }
 
     // 2 - Extremo superior e inferior
     for( int j = 1; j < src.cols - 1; j++ )
     {
-        this->imgGradientX.at< uchar >( 0, j ) = calcPixekGrad_Top( src, kernelX, 0, j );
-        this->imgGradientY.at< uchar >( 0, j ) = calcPixekGrad_Top( src, kernelY, 0, j );
+        this->gradientX.mat[ 0 ][ j ] = calcPixelGrad_Top( src, kernelX, 0, j );
+        this->gradientY.mat[ 0 ][ j ] = calcPixelGrad_Top( src, kernelY, 0, j );
 
-        this->imgGradientX.at< uchar >( src.rows - 1, j ) = calcPixekGrad_Bottom( src, kernelX, src.rows - 1, j );
-        this->imgGradientY.at< uchar >( src.rows - 1, j ) = calcPixekGrad_Bottom( src, kernelY, src.rows - 1, j );
+        this->gradientX.mat[ src.rows - 1 ][ j ] = calcPixelGrad_Bottom( src, kernelX, src.rows - 1, j );
+        this->gradientY.mat[ src.rows - 1 ][ j ] = calcPixelGrad_Bottom( src, kernelY, src.rows - 1, j );
     }
 
-    // 3 - Quinas
+    // TODO: 3 - Quinas
+
+    HoughTransform::findBestValuePos( this->gradientX );
+    HoughTransform::findBestValuePos( this->gradientY );
+}
+
+void HoughTransform::findBestValuePos( matrix& Matrix )
+{
+    for( uint i = 0; i < Matrix.rows; i++ )
+        for( uint j = 0; j < Matrix.rows; j++ )
+            if( Matrix.mat[ i ][ j ] > Matrix.maxValuesPos[ 0 ] )
+            {
+                Matrix.maxValuesPos[ 0 ] = Matrix.mat[ i ][ j ];
+                Matrix.maxValuesPos[ 1 ] = i;
+                Matrix.maxValuesPos[ 2 ] = j;
+            }
 }
 
