@@ -98,7 +98,7 @@ int main( int argv, char** argc )
     HoughTransform HT( imgTest.size() );
 
     drawMainDiagonal( imgTest );
-    //drawSquare( imgTest );
+    drawSquare( imgTest );
     //drawCircle( imgTest );
     //cv::circle( imgTest, cv::Point( 50,50 ), 25, cv::Scalar::all( 255 ), 1, 1 );
 

@@ -5,10 +5,14 @@ CONFIG -= qt
 CONFIG += c++11
 
 SOURCES += main.cpp \
-    houghtransform.cpp
+    houghtransform.cpp \
+    common.cpp \
+    houghtransformcircle.cpp
 
 HEADERS += \
-    houghtransform.h
+    houghtransform.h \
+    common.h \
+    houghtransformcircle.h
 
 INCLUDEPATH += /usr/local/include
 

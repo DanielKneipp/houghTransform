@@ -1,41 +1,10 @@
 #ifndef HOUGHTRANSFORM_H
 #define HOUGHTRANSFORM_H
 
-#include <opencv2/core/core.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
+#include "common.h"
 
 #include <iostream>
-#include <vector>
-#include <cmath>
 #include <cstdint>
-
-#define _USE_MATH_DEFINES
-
-#define _THETA_AXIS 360
-#define _CONVERSION_RAD M_PI/180.0
-#define _CONVERSION_DEG 180.0/M_PI
-
-
-struct matrix
-{
-    /** Matriz contendo os valores inteiros. */
-    int **mat = NULL;
-
-    /** Numero de linhas da matriz. */
-    uint rows = 0;
-
-    /** Numero de linhas da matriz. */
-    uint cols = 0;
-
-    /** Especifica se a matriz ja foi inicializada  */
-    bool initialized = false;
-
-    /** Vetor que guarda o valor maximo e a posicao que contem este valor
-     *  na {@link #**mat matriz}. Se armazena na ordem [valor, x, y] */
-    int maxValuesPos[ 3 ] = { -1, -1, -1 };
-};
-
-typedef struct matrix matrix;
 
 class HoughTransform
 {
@@ -101,7 +70,7 @@ private:
      *          as retas da imagem.
      *
      * @param treshold  Define o valor minimo do acumulador no ponto (r,theta) para se
-     *                  Aceitar essas coordenadas como uma "boa" reta.
+     *                  aceitar essas coordenadas como uma "boa" reta.
      *
      * @return  Numero de pares ordenados de (r,theta) aceitos.
      */
@@ -130,13 +99,6 @@ private:
      * @param cols  Numero de colunas das matrizes
      */
     void initGrads( uint rows, uint cols );
-
-    /**
-     * @brief   Acha a posicao que contem o maior valor da matriz.
-     *
-     * @param Matrix    Onde sera procurado o maior valor.
-     */
-    void static findBestValuePos(matrix& Matrix );
 
     /**
      * @brief   Angulo de inclinacao assumido. Igual ao valor de theta do ponto
@@ -181,12 +143,12 @@ private:
     /**
      * @brief   Matriz que contem o resultaod da derivada parcial na direcao X.
      */
-    matrix gradientX;
+    matrix2D gradientX;
 
     /**
      * @brief   Matriz que contem o resultaod da derivada parcial na direcao Y.
      */
-    matrix gradientY;
+    matrix2D gradientY;
 
     /**
      * @brief   Vector contento os pares ordenados de (r,theta) que caracterizam

@@ -360,19 +360,6 @@ void HoughTransform::gradientCalc( const cv::Mat src )
 
     // TODO: 3 - Quinas
 
-    HoughTransform::findBestValuePos( this->gradientX );
-    HoughTransform::findBestValuePos( this->gradientY );
+    findBestValuePos( this->gradientX );
+    findBestValuePos( this->gradientY );
 }
-
-void HoughTransform::findBestValuePos( matrix& Matrix )
-{
-    for( uint i = 0; i < Matrix.rows; i++ )
-        for( uint j = 0; j < Matrix.rows; j++ )
-            if( Matrix.mat[ i ][ j ] > Matrix.maxValuesPos[ 0 ] )
-            {
-                Matrix.maxValuesPos[ 0 ] = Matrix.mat[ i ][ j ];
-                Matrix.maxValuesPos[ 1 ] = i;
-                Matrix.maxValuesPos[ 2 ] = j;
-            }
-}
-
