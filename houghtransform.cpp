@@ -131,7 +131,7 @@ void HoughTransform::initGrads( uint rows, uint cols )
         delete[] this->gradientY.mat;
     }
 
-    // Inicializacao ocm novos valores.
+    // Inicializacao com novos valores.
     this->gradientX.mat = new int*[ rows ];
     for( uint i = 0; i < rows; i++)
         this->gradientX.mat[ i ] = new int[ cols ];

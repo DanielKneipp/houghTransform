@@ -6,23 +6,25 @@
 class HoughTransformCircle
 {
 public:
-    HoughTransformCircle( const cv::Size &imgSize );
-    virtual ~HoughTransform();
+    HoughTransformCircle();
+    virtual ~HoughTransformCircle();
 
     /**
      * @brief   Se computa o espaco de Hough (a,b) da imagem passada como parametro
-     *          para se detectar circulos na mesma
+     *          para se detectar circunferencias na mesma
      *
      * @param edgeImage     Imagem pre-processada com algum metodo de deteccao de
      *                      contornos, e binarizada.
+     *
+     * @param r     Raio das circunferencias que serao procuradas.
      */
-     void compute( cv::Mat& edgeImage );
+     void compute( const cv::Mat& edgeImage, float r );
 
      /**
       * @brief   Usado para se obter o espaco de Hough (Acumulador).
       *
       * @return  Imagem em escala de cinza representado o espaco de Hough
-      *          (linhas -> r, colunas -> theta).
+      *          (linhas -> a, colunas -> b).
       */
      cv::Mat getHoughSpaceImage();
 
@@ -37,9 +39,11 @@ public:
       *
       * @param treshold Limiar utilizado para escolha dos pares (a,b).
       *
+      * @param nPairsOfParams  Numero de pares de parametros maximo a se retornar.
+      *
       * @return     Vector com os pares encontrados.
       */
-     std::vector< int > getBestParamsAB( const uint treshold );
+     std::vector< int3 > getBestParamsAB( const int treshold, uint nPairsOfParams );
 
 private:
      /**
@@ -51,7 +55,24 @@ private:
       *
       * @return  Numero de pares ordenados de (a,b) aceitos.
       */
-     int findBestParamsRT( const uint treshold );
+     int findBestParamsAB( const int treshold );
+
+     /**
+      * @brief  Matriz que representa o espaco de Hough (acumulador), onde
+      *         [linhas][colunas] -> [a+ceil(r)][b+ceil(r)].
+      */
+     matrix2D HoughSpace;
+
+     /**
+      * @brief   Vector contento os pares ordenados de (a,b) que caracterizam
+      *          as circunferencias da imagem.
+      */
+     std::vector< int3 > bestParams;
+
+     /**
+      * @brief  Especifica o raio das circunferencias que estao sendo procuradas.
+      */
+     float radius;
 };
 
 #endif // HOUGHTRANSFORMCIRCLE_H

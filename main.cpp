@@ -2,10 +2,11 @@
 #include <opencv2/highgui/highgui.hpp>
 
 #include "houghtransform.h"
+#include "houghtransformcircle.h"
+#include "common.h"
 
-#define _COLS 100
-#define _ROWS 100
-#define _SIZE 50
+#define _COLS 500
+#define _ROWS 500
 
 #define _MAIN_WINDOW_TITLE "Image Test"
 
@@ -40,27 +41,33 @@ void drawSquare( cv::Mat& img )
 }
 
 // Errors nos extremos inferior e direito.
-void drawCircle( cv::Mat& img )
+void drawCircle( cv::Mat& img, int pixelXCenter = -1, int pixelYCenter = -1, int r = -1 )
 {
-    int colMin = round( (float) _COLS / 10.0 ), rowMin = round( (float) _ROWS / 10.0 );
-    int a = round( (float) _ROWS / 2.0 );
-    int b = round( (float) _COLS / 2.0 );
-    int r = round( (float) ( ( _COLS - colMin ) - colMin) / 2.0 );
-
-    for( int i = rowMin ; i < img.rows - rowMin; i++ )
+    if( pixelXCenter == -1 )
+        pixelXCenter = round( (float) _COLS / 2.0 );
+    if( pixelYCenter == -1 )
+        pixelYCenter = round( (float) _ROWS / 2.0 );
+    if( r == -1 )
     {
-        for( int j = colMin ; j < img.cols - colMin; j++ )
-        {
-            if(  pow( i - a, 2 )  + pow( j - b, 2 ) >=  pow( r, 2 ) - 70 &&
-                 pow( i - a, 2 )  + pow( j - b, 2 ) <=  pow( r, 2 ) + 70 )
-            {
-                img.at< uchar >( i, j ) = 255;
-            }
-        }
+        int colMin = round( (float) _COLS / 10.0 ), rowMin = round( (float) _ROWS / 10.0 );
+        if( colMin < rowMin )
+            r = round( (float) ( _COLS - colMin - colMin ) / 2.0 );
+        else
+            r = round( (float) ( _ROWS - rowMin - rowMin ) / 2.0 );
+    }
+
+    for( float theta = 0.0; theta < 360.0; theta = theta + 0.1 )
+    {
+        int x = round( pixelXCenter + r * cos( ( theta * _CONVERSION_RAD ) ) );
+        int y = round( pixelYCenter + r * sin( ( theta * _CONVERSION_RAD ) ) );
+
+        if( x >= 0 && x < img.cols &&
+            y >= 0 && y < img.rows)
+            img.at< uchar>( y, x ) = 255;
     }
 }
 
-inline int calcPixel( const cv::Mat src, const short kernel[ 3 ][ 3 ], int row, int col)
+inline int calcPixel( const cv::Mat src, const short kernel[ 3 ][ 3 ], int row, int col )
 {
     return ( ( src.at< uchar >( row-1, col-1 ) * kernel[ 0 ][ 0 ] )
            + ( src.at< uchar >( row-1, col ) * kernel[ 0 ][ 1 ] )
@@ -95,26 +102,42 @@ cv::Mat medianBlur( cv::Mat& imgSrc )
 int main( int argv, char** argc )
 {
     cv::Mat imgTest( _ROWS, _COLS, CV_8U, cv::Scalar::all( 0 ) );
-    HoughTransform HT( imgTest.size() );
+    HoughTransformCircle HTC;
+    //HoughTransform HT( imgTest.size() );
 
-    drawMainDiagonal( imgTest );
-    drawSquare( imgTest );
-    //drawCircle( imgTest );
-    //cv::circle( imgTest, cv::Point( 50,50 ), 25, cv::Scalar::all( 255 ), 1, 1 );
+    //imgTest.at< uchar >( _ROWS / 2, _COLS / 2 ) = 255;
+    //drawMainDiagonal( imgTest );
+    //drawSquare( imgTest );
+    drawCircle( imgTest, 30, 48, 130 );
+    drawCircle( imgTest, imgTest.cols - 120, imgTest.rows - 150, 130);
+    drawCircle( imgTest, imgTest.cols/2, imgTest.rows/2, 130 );
 
-    cv::Mat imgTestBlurred = medianBlur( imgTest );
+    //cv::Mat imgTestBlurred = medianBlur( imgTest );
 
-    HT.compute( imgTestBlurred );
-    HT.getBestParamsRT( 10 );
-    cv::Mat HSimg = HT.getHoughSpaceImage();
-    cv::Mat Gx = HT.getGradientImageX();
-    cv::Mat Gy = HT.getGradientImageY();
+    //HT.compute( imgTestBlurred );
+    //HT.getBestParamsRT( 10 );
+    //cv::Mat HSimg = HT.getHoughSpaceImage();
+    //cv::Mat Gx = HT.getGradientImageX();
+    //cv::Mat Gy = HT.getGradientImageY();
+
+    HTC.compute( imgTest, 130 );
+    std::vector< int3 > bestParams = HTC.getBestParamsAB( 1, 15 );
+    cv::Mat HSimg = HTC.getHoughSpaceImage();
+
+    for( int3& centroide : bestParams )
+    {
+        std::cout << "---------------------" << std::endl;
+        std::cout << "a,b: " << centroide.n1 << "," << centroide.n2 << std::endl;
+        std::cout << "pixelXCenter,pixelYCenter: " << centroide.n1 << "," << imgTest.rows - centroide.n2 << std::endl;
+        std::cout << "#Points in this circle: " << centroide.key << std::endl;
+        std::cout << "---------------------" << std::endl;
+    }
 
     cv::namedWindow( _MAIN_WINDOW_TITLE );
-    cv::imshow( _MAIN_WINDOW_TITLE, imgTestBlurred );
+    cv::imshow( _MAIN_WINDOW_TITLE, imgTest );
 
-    cv::imshow( "X Gradient ", Gx );
-    cv::imshow( "Y Gradient ", Gy );
+    //cv::imshow( "X Gradient ", Gx );
+    //cv::imshow( "Y Gradient ", Gy );
     cv::imshow( "Hough Space", HSimg );
 
     cv::waitKey( 0 );

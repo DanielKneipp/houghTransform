@@ -3,7 +3,6 @@
 
 #include "common.h"
 
-#include <iostream>
 #include <cstdint>
 
 class HoughTransform
@@ -130,7 +129,7 @@ private:
 
     /**
      * @brief   Matriz que representa o espaco de Hough (acumulador),
-     *          onde [x][y] -> [r][theta].
+     *          onde [linhas][colunas] -> [r][theta].
      */
     uint **houghSpace;
 
@@ -138,7 +137,7 @@ private:
      * @brief   Vetor de de 2 posições que representa o tamango da matriz houghSpace, onde
      *          [linhas][colunas] -> [r][theta].
      */
-    uint houghSpaceSize [2];
+    uint houghSpaceSize[ 2 ];
 
     /**
      * @brief   Matriz que contem o resultaod da derivada parcial na direcao X.
